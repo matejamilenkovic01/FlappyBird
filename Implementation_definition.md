@@ -75,7 +75,8 @@ Reklame, IAP, leaderboard, lokalizacija, iOS build, Play Store potpisivanje (kor
 
 ### 2.2 Preduslovi koje radi KORISNIK pre nego što agent krene
 Agent na početku **proverava** svaki; ako nešto fali, traži od korisnika da to uradi.
-1. **DOTween (free)** importovan iz Asset Store-a (Package Manager → My Assets → DOTween → Import). Zatim **Tools → Demigiant → DOTween Utility Panel → Setup DOTween**, sa uključenim modulima **UI**, **Sprite**, **Audio**, **TextMeshPro**. Provera: postoji `Assets/Plugins/Demigiant/DOTween/` i `Assets/Resources/DOTweenSettings.asset`.
+1. **DOTween (free)** importovan iz Asset Store-a (Package Manager → My Assets → DOTween → Import). Zatim **Tools → Demigiant → DOTween Utility Panel → Setup DOTween**, sa uključenim modulima **UI**, **Sprite**, **Audio** (Physics2D može). Provera: postoji `Assets/Plugins/Demigiant/DOTween/` i `Assets/Resources/DOTweenSettings.asset`. **Urađeno** (commit `17c03e5`).
+   Napomena: besplatni DOTween **nema TextMeshPro modul** (to je DOTween Pro). Ne treba nam: `TextMeshProUGUI` nasleđuje `Graphic`, pa `DOColor` / `DOFade` iz UI modula rade i na TMP tekstu. Za skaliranje koristi `transform.DOScale` / `DOPunchScale`. Ne koristi `DOText` niti druge TMP-specifične ekstenzije.
 2. **Unity Editor je otvoren** na FlappyBird projektu i ne prikazuje modalni dijalog.
 3. Unity CLI je ažuran: `unity self-update --check`.
 4. TMP Essentials su importovani (Window → TextMeshPro → Import TMP Essential Resources), ako već nisu.
@@ -552,7 +553,7 @@ Svaki commit ostavlja projekat u stanju koje se kompajlira i pokreće. Redosled 
 | Sandbox agenta skriva Editor od `unity status` | Ne zaključuj da je Editor zatvoren — pitaj korisnika |
 | Compile greška → Editor u Safe Mode, CLI ne može da se poveže | `unity pipeline list`, popravi C# fajl, zamoli korisnika za restart Editora |
 | Editor bez fokusa zamrznut u Play mode-u | Recept iz `playmode-verification-loop.md` |
-| DOTween TMP modul nije uključen → `DOColor` na TMP ne postoji | Koristi `DOTween.To(() => text.color, c => text.color = c, …)` ili zamoli korisnika da uključi modul |
+| Besplatni DOTween nema TMP modul | Koristi `Graphic` ekstenzije iz UI modula (`DOColor`, `DOFade`) — rade na `TextMeshProUGUI`; za brojanje teksta `DOTween.To` |
 | `unity build` pada jer je projekat otvoren | Build kroz `eval` u živom Editoru (6.2) |
 | Kenney fajl nije kakav je očekivan (npr. nema okrugle ptice) | Predloži alternativu korisniku pre nego što menjaš vizuelni smer |
 | Statički eventi preživljavaju Play mode bez domain reload-a | Reset u `GameEvents` (4.4) + uvek unsubscribe u `OnDisable` |
