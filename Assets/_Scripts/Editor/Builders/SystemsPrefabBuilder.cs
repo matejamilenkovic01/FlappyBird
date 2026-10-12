@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.UI;
 
 public static class SystemsPrefabBuilder
 {
@@ -24,12 +25,16 @@ public static class SystemsPrefabBuilder
     [MenuItem("Tools/Flappy/Builders/Systems Prefab")]
     public static void Build()
     {
+        using var scope = new TempObjectScope();
         var root = new GameObject("Systems");
 
         BuildAudio(root.transform);
         CreateChild<HapticsService>(root.transform, "HapticsService");
         CreateChild<InputRouter>(root.transform, "InputRouter");
         BuildEventSystem(root.transform);
+        BuildPopupManager(root.transform);
+        BuildTooltipManager(root.transform);
+        BuildSceneLoader(root.transform);
 
         PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
         Object.DestroyImmediate(root);
@@ -74,6 +79,105 @@ public static class SystemsPrefabBuilder
         go.transform.SetParent(parent, false);
         go.AddComponent<EventSystem>();
         go.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
+    }
+
+    private static void BuildPopupManager(Transform parent)
+    {
+        PopupManager manager = CreateChild<PopupManager>(parent, "PopupManager");
+        CreateCanvas(manager.gameObject, 100, true);
+
+        var serialized = new SerializedObject(manager);
+        serialized.FindProperty("_container").objectReferenceValue = manager.transform;
+        SerializedProperty prefabs = serialized.FindProperty("_popupPrefabs");
+        string[] paths = { UIPrefabBuilder.SettingsPopupPath, UIPrefabBuilder.PausePopupPath, UIPrefabBuilder.GameOverPopupPath };
+        prefabs.arraySize = paths.Length;
+        for (int i = 0; i < paths.Length; i++)
+            prefabs.GetArrayElementAtIndex(i).objectReferenceValue = LoadRequired<GameObject>(paths[i]).GetComponent<PopupBase>();
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void BuildTooltipManager(Transform parent)
+    {
+        TooltipManager manager = CreateChild<TooltipManager>(parent, "TooltipManager");
+        // No raycaster: the tooltip never blocks taps meant for the game.
+        CreateCanvas(manager.gameObject, 200, false);
+
+        var serialized = new SerializedObject(manager);
+        serialized.FindProperty("_canvasRect").objectReferenceValue = manager.transform;
+        serialized.FindProperty("_viewPrefab").objectReferenceValue =
+            LoadRequired<GameObject>(UIPrefabBuilder.TooltipViewPath).GetComponent<TooltipView>();
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void BuildSceneLoader(Transform parent)
+    {
+        SceneLoader loader = CreateChild<SceneLoader>(parent, "SceneLoader");
+        CreateCanvas(loader.gameObject, 1000, true);
+        var blocker = loader.gameObject.AddComponent<CanvasGroup>();
+        blocker.blocksRaycasts = false;
+
+        RectTransform top = BuildTransitionPanel(loader.transform, "TopPanel", true);
+        RectTransform bottom = BuildTransitionPanel(loader.transform, "BottomPanel", false);
+
+        var serialized = new SerializedObject(loader);
+        serialized.FindProperty("_blocker").objectReferenceValue = blocker;
+        serialized.FindProperty("_topPanel").objectReferenceValue = top;
+        serialized.FindProperty("_bottomPanel").objectReferenceValue = bottom;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    // Each panel covers half the screen; the seam gets a darker edge and a soft shadow onto the other half.
+    private static RectTransform BuildTransitionPanel(Transform parent, string name, bool isTop)
+    {
+        Color panelColor = UIPrefabBuilder.Hex("4A9BD9");
+        Color edgeColor = UIPrefabBuilder.Hex("2F74AE");
+        const float overlap = 6f;
+        const float edgeHeight = 16f;
+        const float shadowHeight = 26f;
+
+        RectTransform panel = UIPrefabBuilder.CreateRect(name, parent);
+        // Start fully open (off screen); SceneLoader drives the anchors from here.
+        panel.anchorMin = isTop ? new Vector2(0f, 1.04f) : new Vector2(0f, -0.54f);
+        panel.anchorMax = isTop ? new Vector2(1f, 1.54f) : new Vector2(1f, -0.04f);
+        panel.offsetMin = new Vector2(0f, isTop ? -overlap : 0f);
+        panel.offsetMax = new Vector2(0f, isTop ? 0f : overlap);
+        Image image = UIPrefabBuilder.AddImage(panel.gameObject, null, panelColor, false);
+        image.raycastTarget = true;
+
+        float seamY = isTop ? 0f : 1f;
+        RectTransform shadow = UIPrefabBuilder.CreateRect("Shadow", panel);
+        shadow.anchorMin = new Vector2(0f, seamY);
+        shadow.anchorMax = new Vector2(1f, seamY);
+        shadow.pivot = new Vector2(0.5f, isTop ? 1f : 0f);
+        shadow.sizeDelta = new Vector2(0f, shadowHeight);
+        UIPrefabBuilder.AddImage(shadow.gameObject, null, new Color(0f, 0f, 0f, 0.18f), false);
+
+        RectTransform edge = UIPrefabBuilder.CreateRect("Edge", panel);
+        edge.anchorMin = new Vector2(0f, seamY);
+        edge.anchorMax = new Vector2(1f, seamY);
+        edge.pivot = new Vector2(0.5f, isTop ? 0f : 1f);
+        edge.sizeDelta = new Vector2(0f, edgeHeight);
+        UIPrefabBuilder.AddImage(edge.gameObject, null, edgeColor, false);
+
+        return panel;
+    }
+
+    public static Canvas CreateCanvas(GameObject go, int sortingOrder, bool raycaster)
+    {
+        go.layer = LayerMask.NameToLayer("UI");
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = sortingOrder;
+
+        var scaler = go.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        if (raycaster)
+            go.AddComponent<GraphicRaycaster>();
+        return canvas;
     }
 
     public static T CreateChild<T>(Transform parent, string name) where T : Component

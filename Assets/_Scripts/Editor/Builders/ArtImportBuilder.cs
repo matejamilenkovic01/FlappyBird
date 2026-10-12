@@ -28,6 +28,8 @@ public static class ArtImportBuilder
         { "UIPack/slider_track.png", new Vector4(14, 14, 14, 14) },
         { "UIPack/slider_fill.png", new Vector4(14, 14, 14, 14) },
         { "TappyPlane/UIbg.png", new Vector4(16, 16, 16, 16) },
+        { "UIPack/tooltip_bg.png", new Vector4(20, 20, 20, 20) },
+        { "UIPack/badge_red.png", new Vector4(20, 20, 20, 20) },
         { "ui_white.png", new Vector4(1, 1, 1, 1) }
     };
 

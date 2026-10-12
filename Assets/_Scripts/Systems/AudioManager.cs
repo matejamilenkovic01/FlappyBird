@@ -39,6 +39,7 @@ public class AudioManager : SingletonPersistent<AudioManager>
         GameEvents.OnSfxVolumeChanged += HandleSfxVolumeChanged;
         GameEvents.OnMusicVolumeChanged += HandleMusicVolumeChanged;
         GameEvents.OnButtonClicked += HandleButtonClicked;
+        GameEvents.OnPopupShown += HandlePopupShown;
         GameEvents.OnBirdFlapped += HandleBirdFlapped;
         GameEvents.OnScoreChanged += HandleScoreChanged;
         GameEvents.OnBirdDied += HandleBirdDied;
@@ -50,6 +51,7 @@ public class AudioManager : SingletonPersistent<AudioManager>
         GameEvents.OnSfxVolumeChanged -= HandleSfxVolumeChanged;
         GameEvents.OnMusicVolumeChanged -= HandleMusicVolumeChanged;
         GameEvents.OnButtonClicked -= HandleButtonClicked;
+        GameEvents.OnPopupShown -= HandlePopupShown;
         GameEvents.OnBirdFlapped -= HandleBirdFlapped;
         GameEvents.OnScoreChanged -= HandleScoreChanged;
         GameEvents.OnBirdDied -= HandleBirdDied;
@@ -61,6 +63,8 @@ public class AudioManager : SingletonPersistent<AudioManager>
         if (paused)
             SaveVolumes();
     }
+
+    private void OnApplicationQuit() => SaveVolumes();
 
     public void Play(SoundId id, bool varyPitch = false)
     {
@@ -110,6 +114,8 @@ public class AudioManager : SingletonPersistent<AudioManager>
     }
 
     private void HandleButtonClicked() => Play(SoundId.Click, true);
+
+    private void HandlePopupShown() => Play(SoundId.PopupOpen);
 
     private void HandleBirdFlapped() => Play(SoundId.Flap, true);
 

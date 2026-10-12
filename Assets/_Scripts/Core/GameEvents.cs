@@ -36,8 +36,10 @@ public static class GameEvents
 
     #region UI
     public static event Action OnButtonClicked;
+    public static event Action OnPopupShown;
 
     public static void RaiseButtonClicked() => OnButtonClicked?.Invoke();
+    public static void RaisePopupShown() => OnPopupShown?.Invoke();
     #endregion
 
     #region Gameplay
@@ -66,6 +68,7 @@ public static class GameEvents
         OnSfxVolumeChanged = null;
         OnMusicVolumeChanged = null;
         OnButtonClicked = null;
+        OnPopupShown = null;
         OnFlapRequested = null;
         OnBirdFlapped = null;
         OnScoreChanged = null;

@@ -25,6 +25,7 @@ public static class GameplayPrefabBuilder
     [MenuItem("Tools/Flappy/Builders/Gameplay Prefabs")]
     public static void Build()
     {
+        using var scope = new TempObjectScope();
         EnsureFolder("Assets/_Prefabs", "Gameplay");
         EnsureFolder("Assets", "_ScriptableObjects");
 
