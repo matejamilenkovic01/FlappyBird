@@ -1,18 +1,17 @@
 using System.Collections;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
-#endif
 
 public class GameManager : Singleton<GameManager>
 {
     private const float GameOverDelay = 1f;
+    private const string MainSceneName = "Main";
+    private const string MenuSceneName = "Menu";
 
     [SerializeField] private PipeSpawner _spawner;
 
     private int _score;
     private int _highScore;
+    private GameState _stateBeforePause;
 
     public GameState State { get; private set; } = GameState.Ready;
     public int Score => _score;
@@ -28,6 +27,10 @@ public class GameManager : Singleton<GameManager>
     {
         GameEvents.OnFlapRequested += HandleFlapRequested;
         GameEvents.OnBirdDied += HandleBirdDied;
+        GameEvents.OnPauseRequested += HandlePauseRequested;
+        GameEvents.OnResumeRequested += HandleResumeRequested;
+        GameEvents.OnRestartRequested += HandleRestartRequested;
+        GameEvents.OnMenuRequested += HandleMenuRequested;
         _spawner.PipePassed += HandlePipePassed;
     }
 
@@ -35,6 +38,10 @@ public class GameManager : Singleton<GameManager>
     {
         GameEvents.OnFlapRequested -= HandleFlapRequested;
         GameEvents.OnBirdDied -= HandleBirdDied;
+        GameEvents.OnPauseRequested -= HandlePauseRequested;
+        GameEvents.OnResumeRequested -= HandleResumeRequested;
+        GameEvents.OnRestartRequested -= HandleRestartRequested;
+        GameEvents.OnMenuRequested -= HandleMenuRequested;
         _spawner.PipePassed -= HandlePipePassed;
     }
 
@@ -45,14 +52,12 @@ public class GameManager : Singleton<GameManager>
         GameEvents.RaiseScoreChanged(_score, 0);
     }
 
-#if UNITY_EDITOR
-    // Temporary until the Game Over popup exists (removed in the screens & flow commit).
-    private void Update()
+    // Leaving the app mid-run (home button, call) pauses instead of letting the bird die unseen.
+    private void OnApplicationPause(bool paused)
     {
-        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        if (paused && State == GameState.Playing)
+            HandlePauseRequested();
     }
-#endif
 
     private void SetState(GameState state)
     {
@@ -75,6 +80,35 @@ public class GameManager : Singleton<GameManager>
         GameEvents.RaiseScoreChanged(_score, value);
     }
 
+    private void HandlePauseRequested()
+    {
+        if (State != GameState.Playing && State != GameState.Ready)
+            return;
+
+        _stateBeforePause = State;
+        Time.timeScale = 0f;
+        SetState(GameState.Paused);
+        PopupManager.Instance.Show<PausePopup>(new PausePopupData(_highScore));
+    }
+
+    private void HandleResumeRequested()
+    {
+        if (State != GameState.Paused)
+            return;
+
+        PopupManager.Instance.Hide<PausePopup>();
+        Time.timeScale = 1f;
+        SetState(_stateBeforePause);
+    }
+
+    private void HandleRestartRequested() => SceneLoader.Instance.Load(MainSceneName);
+
+    private void HandleMenuRequested()
+    {
+        Time.timeScale = 1f;
+        SceneLoader.Instance.Load(MenuSceneName);
+    }
+
     private void HandleBirdDied()
     {
         if (State != GameState.Playing && State != GameState.Ready)
@@ -88,7 +122,8 @@ public class GameManager : Singleton<GameManager>
     {
         yield return new WaitForSecondsRealtime(GameOverDelay);
 
-        if (_score > _highScore)
+        bool isNewBest = _score > _highScore;
+        if (isNewBest)
         {
             _highScore = _score;
             PlayerPrefs.SetInt(SaveKeys.HighScore, _highScore);
@@ -96,5 +131,6 @@ public class GameManager : Singleton<GameManager>
         }
 
         SetState(GameState.GameOver);
+        PopupManager.Instance.Show<GameOverPopup>(new GameOverPopupData(_score, _highScore, isNewBest));
     }
 }

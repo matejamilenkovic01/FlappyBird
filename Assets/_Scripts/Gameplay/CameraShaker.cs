@@ -20,7 +20,8 @@ public class CameraShaker : MonoBehaviour
     {
         transform.DOKill();
         transform.localPosition = _restPosition;
-        transform.DOShakePosition(_duration, _strength, _vibrato, _randomness)
+        // Z stays put: shaking it would only move the camera through the sprites' depth.
+        transform.DOShakePosition(_duration, new Vector3(_strength, _strength, 0f), _vibrato, _randomness)
             .SetLink(gameObject)
             .OnComplete(() => transform.localPosition = _restPosition);
     }

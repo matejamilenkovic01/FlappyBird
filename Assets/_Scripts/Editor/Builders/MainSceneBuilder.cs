@@ -1,6 +1,8 @@
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
@@ -44,8 +46,72 @@ public static class MainSceneBuilder
         var gameManager = new GameObject("GameManager").AddComponent<GameManager>();
         SetField(gameManager, "_spawner", spawner);
 
+        BuildHud();
+
         EditorSceneManager.SaveScene(scene, ProjectSettingsBuilder.MainScenePath);
         Debug.Log("MainSceneBuilder: done");
+    }
+
+    public const string ScoreTooltip = "Fly through pipes: +1\nGolden pipe: +2";
+
+    private static void BuildHud()
+    {
+        var canvasObject = new GameObject("HUD");
+        SystemsPrefabBuilder.CreateCanvas(canvasObject, 0, true);
+        Transform canvas = canvasObject.transform;
+
+        // First child = drawn and raycast behind everything else on this canvas.
+        RectTransform tapCatcher = UIPrefabBuilder.CreateRect("TapCatcher", canvas);
+        UIPrefabBuilder.Stretch(tapCatcher, Vector4.zero);
+        UIPrefabBuilder.AddImage(tapCatcher.gameObject, null, Color.clear, false).raycastTarget = true;
+        tapCatcher.gameObject.AddComponent<TapCatcher>();
+
+        RectTransform safeArea = UIPrefabBuilder.CreateRect("SafeArea", canvas);
+        UIPrefabBuilder.Stretch(safeArea, Vector4.zero);
+        safeArea.gameObject.AddComponent<SafeArea>();
+
+        BuildGetReady(safeArea);
+
+        TMP_Text score = UIPrefabBuilder.CreateText(safeArea, "Score", "0", 150, Color.white, TextAlignmentOptions.Center);
+        score.fontSharedMaterial = UIPrefabBuilder.OutlineMaterial;
+        score.raycastTarget = true;
+        UIPrefabBuilder.SetTopAnchor(score.rectTransform);
+        score.rectTransform.anchoredPosition = new Vector2(0, -210);
+        score.rectTransform.sizeDelta = new Vector2(420, 200);
+        score.gameObject.AddComponent<ScoreView>();
+        var tooltip = score.gameObject.AddComponent<TooltipTrigger>();
+        var tooltipSerialized = new SerializedObject(tooltip);
+        tooltipSerialized.FindProperty("_text").stringValue = ScoreTooltip;
+        tooltipSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+        UIButton pause = UIPrefabBuilder.InstantiateButton(UIPrefabBuilder.ButtonVariant.Pause, safeArea, Vector2.zero);
+        var pauseRect = (RectTransform)pause.transform;
+        pauseRect.anchorMin = pauseRect.anchorMax = Vector2.one;
+        pauseRect.anchoredPosition = new Vector2(-115, -115);
+
+        var hud = canvasObject.AddComponent<HudView>();
+        SetField(hud, "_pauseButton", pause);
+    }
+
+    private static void BuildGetReady(Transform parent)
+    {
+        RectTransform root = UIPrefabBuilder.CreateRect("GetReady", parent);
+        UIPrefabBuilder.Stretch(root, Vector4.zero);
+        root.gameObject.AddComponent<CanvasGroup>();
+
+        RectTransform title = UIPrefabBuilder.CreateRect("Title", root);
+        title.anchoredPosition = new Vector2(0, 430);
+        title.sizeDelta = new Vector2(760, 139);
+        UIPrefabBuilder.AddImage(title.gameObject, GameplayPrefabBuilder.LoadSprite("Assets/_Art/Kenney/TappyPlane/textGetReady.png"), Color.white, false);
+
+        // Bird sits at about (-230, +60) in reference pixels; the hand points at it from below right.
+        RectTransform hint = UIPrefabBuilder.CreateRect("TapHint", root);
+        hint.anchoredPosition = new Vector2(-120, -70);
+        hint.sizeDelta = new Vector2(150, 150);
+        UIPrefabBuilder.AddImage(hint.gameObject, GameplayPrefabBuilder.LoadSprite("Assets/_Art/Kenney/TappyPlane/tap.png"), Color.white, false);
+
+        var view = root.gameObject.AddComponent<GetReadyView>();
+        SetField(view, "_tapHint", hint);
     }
 
     public static Camera CreateCamera()

@@ -126,7 +126,7 @@ public static class UIPrefabBuilder
         Stretch(content, new Vector4(36, 26, 36, 12));
         var layout = content.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = 18f;
+        layout.spacing = 26f;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;

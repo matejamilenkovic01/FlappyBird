@@ -78,7 +78,9 @@ public static class SystemsPrefabBuilder
         var go = new GameObject("EventSystem");
         go.transform.SetParent(parent, false);
         go.AddComponent<EventSystem>();
-        go.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
+        // Actions left unassigned on purpose: the module falls back to the Input System's default UI
+        // actions at runtime. Assigning them here would only store in-memory references that don't serialize.
+        go.AddComponent<InputSystemUIInputModule>();
     }
 
     private static void BuildPopupManager(Transform parent)
