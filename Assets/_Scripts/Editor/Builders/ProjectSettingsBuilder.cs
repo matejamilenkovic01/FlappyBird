@@ -33,9 +33,24 @@ public static class ProjectSettingsBuilder
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
+        EnsureLayer(PipeLayer, PipeLayerName);
         EnsureScenes();
         AssetDatabase.SaveAssets();
         Debug.Log("ProjectSettingsBuilder: done");
+    }
+
+    public const int PipeLayer = 6;
+    public const string PipeLayerName = "Pipe";
+
+    private static void EnsureLayer(int index, string name)
+    {
+        var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+        SerializedProperty layer = tagManager.FindProperty("layers").GetArrayElementAtIndex(index);
+        if (layer.stringValue == name)
+            return;
+
+        layer.stringValue = name;
+        tagManager.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static void EnsureScenes()

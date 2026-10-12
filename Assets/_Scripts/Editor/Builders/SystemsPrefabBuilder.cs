@@ -40,6 +40,8 @@ public static class SystemsPrefabBuilder
     {
         AudioManager audioManager = CreateChild<AudioManager>(parent, "AudioManager");
         GameObject go = audioManager.gameObject;
+        // The only listener in the game: it persists across scenes, so scene cameras don't carry one.
+        go.AddComponent<AudioListener>();
 
         AudioSource sfxSource = go.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
