@@ -29,3 +29,6 @@ MonoBehaviour:
   BaseSpeed: 2.4
   SpeedPerPoint: 0.05
   MaxSpeed: 4
+  EasyPipeCount: 10
+  EasyGapBonus: 0.4
+  EasyMaxGapCenterDelta: 1.3

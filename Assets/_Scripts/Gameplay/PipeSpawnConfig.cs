@@ -20,9 +20,23 @@ public class PipeSpawnConfig : ScriptableObject
     public float SpeedPerPoint = 0.05f;
     public float MaxSpeed = 4.0f;
 
+    [Header("Warm-up (first pipes are gentler)")]
+    public int EasyPipeCount = 10;
+    public float EasyGapBonus = 0.4f;
+    public float EasyMaxGapCenterDelta = 1.3f;
+
     public PipeTypeEntry PickType() => WeightedRandom.Pick(PipeTypes, t => t.SpawnWeight);
 
     public float GetSpeed(int score) => Mathf.Min(BaseSpeed + SpeedPerPoint * score, MaxSpeed);
+
+    // Warm-up values blend into the regular ones over the first EasyPipeCount pipes.
+    public float GetGapSize(int pipeIndex) => GapSize + EasyGapBonus * WarmUp(pipeIndex);
+
+    public float GetMaxGapCenterDelta(int pipeIndex) =>
+        Mathf.Lerp(MaxGapCenterDelta, EasyMaxGapCenterDelta, WarmUp(pipeIndex));
+
+    private float WarmUp(int pipeIndex) =>
+        EasyPipeCount <= 0 ? 0f : 1f - Mathf.Clamp01(pipeIndex / (float)EasyPipeCount);
 
     private void OnValidate()
     {

@@ -78,7 +78,12 @@ public static class MainSceneBuilder
         UIPrefabBuilder.SetTopAnchor(score.rectTransform);
         score.rectTransform.anchoredPosition = new Vector2(0, -210);
         score.rectTransform.sizeDelta = new Vector2(420, 200);
-        score.gameObject.AddComponent<ScoreView>();
+        TMP_Text bonusFloat = UIPrefabBuilder.CreateText(score.rectTransform, "BonusFloat", "+2", 90, UIPrefabBuilder.Hex("FFD34D"), TextAlignmentOptions.Left);
+        bonusFloat.fontSharedMaterial = UIPrefabBuilder.OutlineMaterial;
+        bonusFloat.rectTransform.anchoredPosition = new Vector2(250, 10);
+        bonusFloat.rectTransform.sizeDelta = new Vector2(200, 120);
+        var scoreView = score.gameObject.AddComponent<ScoreView>();
+        SetField(scoreView, "_bonusFloat", bonusFloat);
         var tooltip = score.gameObject.AddComponent<TooltipTrigger>();
         var tooltipSerialized = new SerializedObject(tooltip);
         tooltipSerialized.FindProperty("_text").stringValue = ScoreTooltip;

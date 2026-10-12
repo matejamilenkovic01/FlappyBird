@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 
 public class AudioManager : SingletonPersistent<AudioManager>
@@ -6,6 +7,7 @@ public class AudioManager : SingletonPersistent<AudioManager>
     private const float DefaultSfxVolume = 0.8f;
     private const float DefaultMusicVolume = 0.5f;
     private const float PausedMusicFactor = 0.5f;
+    private const float FallSoundDelay = 0.3f;
 
     [SerializeField] private SoundData[] _sounds;
     [SerializeField] private AudioClip _musicClip;
@@ -127,7 +129,11 @@ public class AudioManager : SingletonPersistent<AudioManager>
         Play(delta > 1 ? SoundId.Bonus : SoundId.Score);
     }
 
-    private void HandleBirdDied() => Play(SoundId.Hit);
+    private void HandleBirdDied()
+    {
+        Play(SoundId.Hit);
+        DOVirtual.DelayedCall(FallSoundDelay, () => Play(SoundId.Fall), false).SetLink(gameObject);
+    }
 }
 
 [Serializable]

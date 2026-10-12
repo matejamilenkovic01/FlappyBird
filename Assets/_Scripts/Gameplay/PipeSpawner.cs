@@ -17,6 +17,7 @@ public class PipeSpawner : MonoBehaviour
     private bool _isSpawning;
     private float _distanceSinceSpawn;
     private float _lastGapCenterY;
+    private int _spawnedCount;
     private float _spawnX;
     private float _despawnX;
 
@@ -73,14 +74,16 @@ public class PipeSpawner : MonoBehaviour
         if (type == null || !_pools.TryGetValue(type, out ComponentPool<PipePair> pool))
             return;
 
-        float min = Mathf.Max(_config.GapCenterYRange.x, _lastGapCenterY - _config.MaxGapCenterDelta);
-        float max = Mathf.Min(_config.GapCenterYRange.y, _lastGapCenterY + _config.MaxGapCenterDelta);
+        float maxDelta = _config.GetMaxGapCenterDelta(_spawnedCount);
+        float min = Mathf.Max(_config.GapCenterYRange.x, _lastGapCenterY - maxDelta);
+        float max = Mathf.Min(_config.GapCenterYRange.y, _lastGapCenterY + maxDelta);
         _lastGapCenterY = UnityEngine.Random.Range(min, max);
 
         PipePair pipe = pool.Get();
         _owners[pipe] = pool;
-        pipe.Init(new Vector2(x, _lastGapCenterY), _config.GapSize, type.ScoreValue, _scroller, _despawnX,
+        pipe.Init(new Vector2(x, _lastGapCenterY), _config.GetGapSize(_spawnedCount), type.ScoreValue, _scroller, _despawnX,
             HandlePipePassed, Release);
+        _spawnedCount++;
     }
 
     private void Release(PipePair pipe)

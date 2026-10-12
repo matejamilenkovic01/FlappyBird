@@ -74,3 +74,6 @@ crashlytics-build.properties
 .DS_Store
 .idea/
 .vscode/
+
+# Unity build temp
+.utmp/
